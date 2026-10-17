@@ -29,6 +29,18 @@ describe("catalogFor — product detection", () => {
     ]);
   });
 
+  test("Aspire resort credit carries no anniversary anchor (calendar halves)", () => {
+    // Amex's benefit terms run the resort credit January–June and
+    // July–December, independent of the account anniversary. An anchor
+    // here would silently shift every cardholder's periods, so the
+    // catalog must not seed one.
+    const resort = catalogFor("Hilton Honors Aspire Card")!.find(
+      (d) => d.name === "Hilton Resort Credit",
+    )!;
+    expect(resort.anchorMonth).toBeUndefined();
+    expect(resort.anchorDay).toBeUndefined();
+  });
+
   test("Brilliant gets the monthly dining credit", () => {
     const defs = catalogFor("Marriott Bonvoy Brilliant® American Express® Card")!;
     expect(defs[0]).toEqual(

@@ -3,7 +3,7 @@ import { asc } from "drizzle-orm";
 import { addDays, Actions, periodBounds } from "../server/src/actions";
 import * as schema from "../server/src/schema";
 import { createTestDb, fakeCtx, todayLA } from "./helpers";
-import { ALEX_ASPIRE, ALEX_BIZ_PLAT, JANUARY_SNAPSHOT, SAM_MS_PLATINUM } from "./fixtures/sample";
+import { ALEX_ASPIRE, ALEX_BIZ_PLAT, ALEX_SAPPHIRE, JANUARY_SNAPSHOT, SAM_MS_PLATINUM } from "./fixtures/sample";
 
 async function importJanuary(db: ReturnType<typeof createTestDb>) {
   return Actions.importSnapshot.handler(fakeCtx(db), structuredClone(JANUARY_SNAPSHOT) as any);
@@ -499,12 +499,25 @@ describe("importSnapshot — seeded defaults are truthful, never assumed", () =>
 
   test("a catalog-default anchor seeds UNCONFIRMED; anchorless credits seed confirmed", async () => {
     const db = createTestDb();
+    await Actions.importSnapshot.handler(fakeCtx(db), {
+      complete: true,
+      windowStart: "2026-01-01",
+      windowEnd: "2026-01-31",
+      accounts: [ALEX_SAPPHIRE],
+      postings: [],
+    } as any);
     await Actions.importSnapshot.handler(fakeCtx(db), JANUARY_SNAPSHOT as any);
     const credits = await db.select().from(schema.credits);
-    // The Aspire Resort Credit carries the placeholder May 1 anchor.
+    // The Sapphire Preferred hotel credit carries the placeholder May 1 anchor.
+    const hotel = credits.find((c) => c.name === "Annual Hotel Credit")!;
+    expect(hotel.anchorMonth).toBe(5);
+    expect(hotel.anchorConfirmed).toBe(0);
+    // The Aspire Resort Credit carries NO anchor (Amex runs it on
+    // calendar halves), so it seeds confirmed like the other
+    // anchorless credits.
     const resort = credits.find((c) => c.name === "Hilton Resort Credit")!;
-    expect(resort.anchorMonth).toBe(5);
-    expect(resort.anchorConfirmed).toBe(0);
+    expect(resort.anchorMonth).toBeNull();
+    expect(resort.anchorConfirmed).toBe(1);
     const flight = credits.find((c) => c.name === "Flight Credit")!;
     expect(flight.anchorMonth).toBeNull();
     expect(flight.anchorConfirmed).toBe(1);
