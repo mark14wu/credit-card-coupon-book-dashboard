@@ -69,12 +69,12 @@ const PERSONAL_PLAT: CreditDef[] = [
 
 const ASPIRE: CreditDef[] = [
   { name: "Flight Credit", amount: 50, period: "quarterly", pattern: "flight credit", note: "Flights booked directly with airlines or Amex Travel" },
-  // Amex runs the resort credit on a cardmember-year cycle (two 6-month
-  // halves from the account anniversary), NOT calendar halves. The
-  // anchor below is the same kind of placeholder default as the Chase
-  // anchors: it starts unconfirmed and the dashboard warns until the
-  // user sets it to their real anniversary.
-  { name: "Hilton Resort Credit", amount: 200, period: "semiannual", anchorMonth: 5, anchorDay: 1, pattern: "hilton", note: "At participating Hilton resorts. Amex runs this on a cardmember-year cycle — two 6-month halves from your account anniversary; the May 1 anchor is a placeholder default, so confirm or edit the credit's anchor to match your anniversary" },
+  // Amex runs the resort credit on CALENDAR halves — $200 from
+  // January through June and another $200 from July through December
+  // (per the benefit terms for the Aspire card) — NOT on the
+  // cardmember year. It therefore carries no anniversary anchor,
+  // unlike the Chase and U.S. Bank credits below.
+  { name: "Hilton Resort Credit", amount: 200, period: "semiannual", pattern: "hilton", note: "At participating Hilton resorts. Amex runs this on calendar halves — $200 from January through June and another $200 from July through December; your account anniversary does not affect it" },
 ];
 
 const BRILLIANT: CreditDef[] = [
@@ -663,8 +663,10 @@ export function periodBounds(period: Period, dateStr: string, anchor?: Anchor | 
   if (period === "semiannual" && anchor) {
     // Cardmember-year halves: the cycle year starts on the anchor date
     // and splits into two 6-month halves (anchor → anchor+6mo → anchor).
-    // Used by the Aspire resort credit, which Amex runs on the account
-    // anniversary rather than the calendar.
+    // No catalog credit is seeded with a semiannual anchor (the Aspire
+    // resort credit runs on calendar halves — see the ASPIRE catalog
+    // entry); this branch serves a semiannual credit whose anchor the
+    // user set by hand.
     const anchorDayThisYear = Math.min(anchor.day, daysInMonth(y, anchor.month));
     const startsThisYear = dateStr >= fmt(y, anchor.month, anchorDayThisYear);
     const startY = startsThisYear ? y : y - 1;

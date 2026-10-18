@@ -182,9 +182,11 @@ describe("laDateOf", () => {
 });
 
 describe("periodBounds — anchored semiannual (cardmember-year halves)", () => {
-  // The Hilton Aspire Resort Credit runs on two 6-month halves of the
-  // CARDMEMBER year, not calendar halves. With a May 1 anchor the
-  // halves are May–Oct and Nov–Apr.
+  // A semiannual credit anchored BY HAND runs on two 6-month halves of
+  // the anchored year. No catalog credit is seeded with a semiannual
+  // anchor — the Aspire resort credit runs on calendar halves (see the
+  // catalog test). With a May 1 anchor the halves are May–Oct and
+  // Nov–Apr.
   const MAY1 = { month: 5, day: 1 };
 
   test("a date in the first anchored half gets May–Oct bounds", () => {
