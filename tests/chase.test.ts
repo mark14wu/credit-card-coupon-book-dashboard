@@ -155,3 +155,40 @@ describe("Chase import — seeded anchor confirmation state", () => {
     expect(after.anchorConfirmed).toBe(1);
   });
 });
+
+describe("Chase accounts — catalog default display names", () => {
+  test("dashboard and markdown label Chase credits with the catalog defaults, no nickname needed", async () => {
+    const db = createTestDb();
+    await importChase(db);
+
+    const dash: any = await Actions.getDashboard.handler(fakeCtx(db), {});
+    const byMask = new Map(dash.credits.map((c: any) => [c.mask, c]));
+    expect(byMask.get("6666").accountDefaultName).toBe("CSP");
+    expect(byMask.get("7777").accountDefaultName).toBe("HyattBus");
+    expect(byMask.get("8888").accountDefaultName).toBe("IHG-Premier");
+    expect(byMask.get("9999").accountDefaultName).toBe("Ritz");
+    const acctByMask = new Map(dash.accounts.map((a: any) => [a.mask, a]));
+    expect(acctByMask.get("6666").defaultName).toBe("CSP");
+
+    const md: string = ((await Actions.getAgentMarkdown.handler(fakeCtx(db), {})) as any).markdown;
+    expect(md).toContain("· CSP");
+    expect(md).toContain("· HyattBus");
+    expect(md).toContain("· IHG-Premier");
+    expect(md).toContain("### Travel Credit — Login 1 9999 · Ritz");
+    expect(md).toContain('shown as "CSP"');
+  });
+
+  test("a user-set nickname still wins over the catalog default", async () => {
+    const db = createTestDb();
+    await importChase(db);
+    const dash: any = await Actions.getDashboard.handler(fakeCtx(db), {});
+    const ritz = dash.accounts.find((a: any) => a.mask === "9999");
+    await Actions.updateAccount.handler(fakeCtx(db), {
+      accountId: ritz.id,
+      nickname: "RitzCustom",
+    });
+    const md: string = ((await Actions.getAgentMarkdown.handler(fakeCtx(db), {})) as any).markdown;
+    expect(md).toContain("### Travel Credit — Login 1 9999 · RitzCustom");
+    expect(md).toContain('shown as "RitzCustom"');
+  });
+});

@@ -361,6 +361,39 @@ export function catalogFor(accountName: string): CreditDef[] | null {  const n =
   return null;
 }
 
+/**
+ * The catalog's default display name for a card product: the short label
+ * credit rows and the Agent Markdown show for an account when the user
+ * has not set a nickname. Detection uses the same name substrings as
+ * catalogFor, in the same order.
+ *
+ * Only Chase and U.S. Bank products are listed: those are the issuers
+ * whose aggregator account names routinely come back generic ("CREDIT
+ * CARD", a cardholder's name, "Credit Card - 7536"), which is what used
+ * to force users to hand-set a nickname for every such card. Amex
+ * account names already carry the product, so they return null and the
+ * account name stands. A user-set nickname always wins over this
+ * default; the default in turn wins over the raw account name.
+ */
+export function defaultNameFor(accountName: string): string | null {
+  const n = accountName.toLowerCase();
+  if (n.includes("sapphire preferred")) return "CSP";
+  if (n.includes("world of hyatt") && n.includes("business")) return "HyattBus";
+  if (n.includes("world of hyatt")) return "Hyatt";
+  if (n.includes("ihg") && n.includes("premier")) return "IHG-Premier";
+  if (n.includes("ihg") && n.includes("select")) return "IHG-Select";
+  if (n.includes("ihg")) return "IHG";
+  if (n.includes("ritz")) return "Ritz";
+  if (n.includes("boundless")) return "Boundless";
+  if (n.includes("bonvoy") && n.includes("business")) return "BonvoyBus";
+  if (n.includes("united") && n.includes("business")) return "UABus";
+  if (n.includes("united") && n.includes("explorer")) return "UA";
+  if (n.includes("aeroplan")) return "Aeroplan";
+  if (n.includes("altitude")) return "UAR";
+  if (n.includes("triple cash")) return "TripleCash";
+  return null;
+}
+
 /** Enrollment notice for defs that set enrollmentRequired without their own enrollmentNote. */
 export const DEFAULT_ENROLLMENT_NOTE =
   "Enrollment required: enroll this card in the benefit first — the credit only pays out after enrollment.";
@@ -774,6 +807,8 @@ const creditView = z.object({
   accountName: z.string(),
   /** User-chosen display prefix for the account ("" when unset). */
   accountNickname: z.string(),
+  /** Catalog default display name for the account's product ("" when none). */
+  accountDefaultName: z.string(),
   mask: z.string(),
   /** Fifth-from-last card digit the user recorded ("" when unset); with the mask it forms the effective ending. */
   fifthDigit: z.string(),
@@ -866,6 +901,8 @@ const dashboardResponse = z.object({
       name: z.string(),
       /** User-chosen display prefix ("" when unset); never set by Plaid. */
       nickname: z.string(),
+      /** Catalog default display name for the product ("" when none). */
+      defaultName: z.string(),
       mask: z.string(),
       /** Fifth-from-last card digit the user recorded ("" when unset); never set by Plaid. */
       fifthDigit: z.string(),
@@ -1270,6 +1307,7 @@ async function computeDashboard(
             accountId: c.accountId,
             accountName: acct.name,
             accountNickname: acct.nickname,
+            accountDefaultName: defaultNameFor(acct.name) ?? "",
             mask: acct.mask,
             fifthDigit: acct.fifthDigit,
             owner: ownerLabelFor(acct.owner, ownerLabels),
@@ -1455,6 +1493,7 @@ async function computeDashboard(
           id: a.id,
           name: a.name,
           nickname: a.nickname,
+          defaultName: defaultNameFor(a.name) ?? "",
           mask: a.mask,
           fifthDigit: a.fifthDigit,
           issuer: a.issuer,

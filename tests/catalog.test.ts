@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   catalogFor,
+  defaultNameFor,
   DEFAULT_ENROLLMENT_NOTE,
   DEFAULT_OWNER_LABELS,
   enrollmentInfoFor,
@@ -314,5 +315,41 @@ describe("ownerLabelFor — login label resolution", () => {
   test("defaults are neutral login names", () => {
     expect(DEFAULT_OWNER_LABELS).toEqual(["Login 1", "Login 2"]);
     expect(ownerLabelFor("A", DEFAULT_OWNER_LABELS)).toBe("Login 1");
+  });
+});
+
+describe("defaultNameFor — catalog default display names", () => {
+  test("Chase and U.S. Bank products get their short default names", () => {
+    expect(defaultNameFor("Chase Sapphire Preferred®")).toBe("CSP");
+    expect(defaultNameFor("World of Hyatt Business Credit Card")).toBe("HyattBus");
+    expect(defaultNameFor("World of Hyatt Credit Card")).toBe("Hyatt");
+    expect(defaultNameFor("IHG One Rewards Premier Credit Card")).toBe("IHG-Premier");
+    expect(defaultNameFor("IHG One Rewards Select Credit Card")).toBe("IHG-Select");
+    expect(defaultNameFor("IHG One Rewards Traveler Credit Card")).toBe("IHG");
+    expect(defaultNameFor("The Ritz-Carlton® Credit Card")).toBe("Ritz");
+    expect(defaultNameFor("Marriott Bonvoy Boundless® Credit Card")).toBe("Boundless");
+    expect(defaultNameFor("Marriott Bonvoy® Business American Express® Card")).toBe("BonvoyBus");
+    expect(defaultNameFor("United℠ Business Card")).toBe("UABus");
+    expect(defaultNameFor("United℠ Explorer Card")).toBe("UA");
+    expect(defaultNameFor("Aeroplan® Credit Card")).toBe("Aeroplan");
+    expect(defaultNameFor("U.S. Bank Altitude® Reserve Visa Infinite® Card")).toBe("UAR");
+    expect(defaultNameFor("U.S. Bank Triple Cash Rewards Visa® Business Card")).toBe("TripleCash");
+  });
+
+  test("detection order keeps the specific product ahead of the generic one", () => {
+    // Business variants must win over their personal counterparts.
+    expect(defaultNameFor("World of Hyatt Business Credit Card")).not.toBe("Hyatt");
+    expect(defaultNameFor("United℠ Business Card")).not.toBe("UA");
+    // Premier and Select must win over the bare IHG fallback.
+    expect(defaultNameFor("IHG One Rewards Premier Credit Card")).not.toBe("IHG");
+  });
+
+  test("products whose names already carry the product get no default", () => {
+    expect(defaultNameFor("Hilton Honors Aspire Card")).toBeNull();
+    expect(defaultNameFor("Business Platinum Card®")).toBeNull();
+    expect(defaultNameFor("Marriott Bonvoy Brilliant® American Express® Card")).toBeNull();
+    // A generically named account identifies no product at all.
+    expect(defaultNameFor("CREDIT CARD")).toBeNull();
+    expect(defaultNameFor("Credit Card - 7536")).toBeNull();
   });
 });

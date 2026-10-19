@@ -120,10 +120,13 @@ function productPrefix(accountName: string): string {
 
 /**
  * The prefix a credit row carries: the account's user-set nickname when
- * one exists (e.g. UA / UABus), otherwise the product-derived prefix.
+ * one exists (e.g. UA / UABus), otherwise the catalog's default display
+ * name for the product (e.g. CSP), otherwise the product-derived prefix.
  */
 function prefixFor(c: Credit): string {
-  return c.accountNickname !== "" ? c.accountNickname : productPrefix(c.accountName);
+  if (c.accountNickname !== "") return c.accountNickname;
+  if (c.accountDefaultName !== "") return c.accountDefaultName;
+  return productPrefix(c.accountName);
 }
 
 function PrefixChip({ label }: { label: string }) {
@@ -1508,7 +1511,8 @@ function AccountsSection({ data, onChanged }: { data: Dashboard; onChanged: () =
                         : a.hasCatalog
                           ? "Credits tracked"
                           : "No statement credits in the catalog"}
-                      {a.nickname !== "" && ` · shown as "${a.nickname}"`}
+                      {(a.nickname !== "" || a.defaultName !== "") &&
+                        ` · shown as "${a.nickname !== "" ? a.nickname : a.defaultName}"`}
                     </span>
                   </span>
                   <span className={`${MONO} text-sm text-[var(--dim)]`}>

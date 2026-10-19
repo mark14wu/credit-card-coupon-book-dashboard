@@ -98,10 +98,17 @@ function accountLabel(a: Account): string {
  * The same composition for a credit: "Sam 2222 · Hilton Honors Aspire
  * Card". When the user has set an account nickname (the short prefix
  * the dashboard rows carry, e.g. "UA"), it stands in for the product
- * name: "Na 6151 · UA".
+ * name: "Na 6151 · UA". Without a nickname, the catalog's default
+ * display name for the product (e.g. "CSP") stands in instead; the raw
+ * account name is the last resort.
  */
 function cardLabel(c: Credit): string {
-  const product = c.accountNickname !== "" ? c.accountNickname : c.accountName;
+  const product =
+    c.accountNickname !== ""
+      ? c.accountNickname
+      : c.accountDefaultName
+        ? c.accountDefaultName
+        : c.accountName;
   const tag = cardTag(c.owner, c.mask, c.fifthDigit);
   return tag ? `${tag} · ${product}` : product;
 }
@@ -228,7 +235,8 @@ function accountLines(data: DashboardData): string[] {
   if (data.accounts.length === 0) return ["- No accounts imported yet."];
   return data.accounts.map((a) => {
     let line = `- ${accountLabel(a)}`;
-    if (a.nickname !== "") line += ` — shown as "${a.nickname}"`;
+    const shown = a.nickname !== "" ? a.nickname : (a.defaultName ?? "");
+    if (shown !== "") line += ` — shown as "${shown}"`;
     if (a.ignored) line += " — ignored (you marked it a duplicate / not tracked)";
     else if (a.creditCount === 0) line += " — no supported credits tracked";
     if (a.suspectedDuplicate) line += " — possible duplicate (see Warnings)";

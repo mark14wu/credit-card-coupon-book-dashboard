@@ -29,6 +29,7 @@ function credit(overrides: Partial<Credit>): Credit {
     anchorDay: null,
     anchorConfirmed: true,
     accountNickname: "",
+    accountDefaultName: "",
     currency: "USD",
     enrolled: true,
     enrollmentRequired: false,
